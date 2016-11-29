@@ -79,14 +79,11 @@ public class Test {
         Pi max = new Pi("", Double.MIN_VALUE);
         for (Pi pi : prevPi) {
             double newProb = pi.probability * getTransmissionProbability(pi.tag, finalNode);
-//            System.out.println(pi.tag + " -> " + finalNode + " : " + getTransmissionProbability(pi.tag, finalNode) + ", " + pi.probability);
             if (newProb > max.probability) {
                 max.probability = newProb;
                 max.tag = pi.tag;
-//                System.out.println("UPDATE: " + pi.tag + " -> " + finalNode);
             }
         }
-//        System.out.println(max.tag + " " + max.probability);
         return max.tag;
     }
 
@@ -112,7 +109,6 @@ public class Test {
             }
             piList.add(new Pi("STOP", maxForY));
             piMap.put(index, piList);
-//            piMax.put(index, max);
         } else {
             String word = sqn.get(index - 1);
             List<Pi> prevPi = piMap.get(index - 1);
@@ -121,12 +117,9 @@ public class Test {
                 if (y.equals("STOP") || y.equals("START")) {
                     continue;
                 }
-//                double maxForY = 0;
+
                 Pi max = computePiHelper(index, prevPi, word, y, emissionDefault);
-//                if (max.tag.equals("") && max.probability == 0.0) {
-////                    System.out.println("NEED TO REPEAT");
-//                    max = computePiHelper(index, prevPi, word, y, true);
-//                }
+
                 if (max.probability != 0) {
                     allZeros = false;
                 }
@@ -229,9 +222,7 @@ public class Test {
         double probability;
 
         if (trainingResult.transitionProbability.containsKey(test)) {
-//        if (trainingResult.transitionProbability.containsKey(test)) {
             probability = trainingResult.transitionProbability.get(test);
-//            probability = (trainingResult.transition.get(test)) / totalY;
         } else {
             probability = 0;
         }
