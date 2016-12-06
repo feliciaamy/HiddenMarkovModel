@@ -7,19 +7,24 @@ import java.util.*;
 public class Main {
     private static TrainingResult trainingResult;
     public final static String LANGUAGE = "EN";
+    private static boolean optimize = true;
     public static void main(String[] args) {
         File trainingFile = (new File(LANGUAGE + "/train.txt"));
 
-        Training trainingData = new Training(trainingFile);
+        Training trainingData = new Training(trainingFile, optimize);
         trainingResult = trainingData.getTrainingResult();
 
 //        printEmission(trainingResult.emission);
 //        printTransition(trainingResult.transition);
 //        printLabel(trainingResult.label);
 
+
         File testFiles = new File(LANGUAGE + "/" + LANGUAGE+ ".in");
-        Test test = new Test(trainingResult);
+        Test test = new Test(trainingResult, optimize);
         test.writePrediction(testFiles, PredictionAlgorithm.VITERBI);
+
+//        Test_k test = new Test_k(trainingResult, 1);
+//        test.writePrediction(testFiles);
     }
 
     public static void printEmission(Map<EmissionNode, Integer> map) {
