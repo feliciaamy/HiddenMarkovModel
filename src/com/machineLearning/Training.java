@@ -14,13 +14,13 @@ public class Training {
     private TrainingResult tr;
     private boolean optimize = false;
     private String wordPattern = "(?i)@*[a-z]*";
-    private String usernamePattern = "^@?(\\w){1,15}$";
+    private String usernamePattern = "^@(\\w){1,15}$";
     private Pattern rWord = Pattern.compile(wordPattern);
     private Pattern rUsername = Pattern.compile(usernamePattern);
 
-    public Training(File file, boolean optimize) {
+    public Training(File file, boolean optimize, String language) {
         this.optimize = optimize;
-        tr = new TrainingResult();
+        tr = new TrainingResult(language);
         // Create a Pattern object
         train(file);
     }
@@ -40,7 +40,7 @@ public class Training {
                 boolean isFeature = false;
                 if (temp.length > 1) {
                     String word = temp[0];
-                    if (optimize){
+                    if (optimize) {
                         word = temp[0].toLowerCase().replace("'", "").replace("#", "").replace(".", "");
                     }
                     // LABEL
@@ -48,16 +48,17 @@ public class Training {
                     if (!optimize || ((isWord(word) || isUsername(word)) && !tr.stopwords.contains(word))) {
                         isFeature = true;
                         if (optimize) {
-                            updateIgnore(temp[1]);
-                        }
-
-                        if (isUsername(word)) {
                             word = word.replace("@", "");
+                            if (word.equals("")) {
+                                continue;
+                            }
                         }
 
                         // WORD
-                        if (!tr.trainedWords.contains(word)) {
-                            tr.trainedWords.add(word);
+                        if (!tr.trainedWords.containsKey(word)) {
+                            tr.trainedWords.put(word, 1);
+                        } else {
+                            tr.trainedWords.put(word, 1 + tr.trainedWords.get(word));
                         }
 
                         // EMISSION
@@ -68,6 +69,9 @@ public class Training {
                             tr.emission.put(newEmission, 1);
                         }
                     } else {
+                        if (optimize) {
+                            updateIgnore(temp[1]);
+                        }
 //                        System.out.println(word);
                     }
                 }
@@ -139,19 +143,54 @@ public class Training {
     }
 
     private void computeEmissionProbability() {
+        boolean repeat = false;
         System.out.println("Compute Emission Probability");
+        Map<String, Integer> reduceLabel = new HashMap<>();
+        List<EmissionNode> remove = new ArrayList<>();
         for (Map.Entry<EmissionNode, Integer> entry : tr.emission.entrySet()) {
-            double totalY = tr.label.get(entry.getKey().y) + 1;
+            String word = entry.getKey().x;
+            String label = entry.getKey().y;
+            double totalY = tr.label.get(label) + 1;
             if (optimize) {
-                totalY -= -tr.ignored.get(entry.getKey().y);
+                totalY -= tr.ignored.get(label);
             }
             double probability = entry.getValue() / totalY;
-            if (probability >= 0.05) {
+//            tr.emissionProbability.put(entry.getKey(), probability);
+            if ((optimize && probability > 1E-5) || !optimize) {
+                tr.emissionProbability.put(entry.getKey(), probability);
+            } else {
+                repeat = true;
                 System.out.println(entry.getKey().toString() + " " + probability);
+                remove.add(entry.getKey());
+                tr.trainedWords.put(word, tr.trainedWords.get(word) - entry.getValue());
+                if (tr.trainedWords.get(word) <= 0) {
+//                    System.out.println(word);
+                    tr.trainedWords.remove(word);
+                }
+                if (!reduceLabel.containsKey(label)) {
+                    reduceLabel.put(label, 1);
+                } else {
+                    reduceLabel.put(label, reduceLabel.get(label) + entry.getValue());
+                }
             }
-            tr.emissionProbability.put(entry.getKey(), probability);
         }
-//        System.out.println(tr.emissionProbability.toString());
+
+        if (optimize) {
+            for (Map.Entry<String, Integer> entry : reduceLabel.entrySet()) {
+                String label = entry.getKey();
+                int reduce = entry.getValue();
+                tr.ignored.put(label, reduce + tr.ignored.get(label));
+            }
+
+            for (EmissionNode e : remove) {
+                tr.emission.remove(e);
+            }
+            if (repeat) {
+                System.out.println("REPEAT");
+                computeEmissionProbability();
+            }
+        }
+
     }
 
     private void computeTransitionProbability() {

@@ -5,5 +5,6 @@ package com.machineLearning;
  */
 public enum PredictionAlgorithm {
     SIMPLE,
-    VITERBI
+    VITERBI,
+    VITERBIK,
 }

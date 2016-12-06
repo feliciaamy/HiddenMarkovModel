@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by lakshitachhikara on 12/4/16.
@@ -25,9 +27,16 @@ public class Test_k {
     //Stores the k-th sequence during backward viterbi.
     String[] yMax;
     boolean allZeros;
+    boolean optimize;
     int k;
 
-    public Test_k(TrainingResult trainingResult, int k) {
+    private String wordPattern = "(?i)@*[a-z]*";
+    private String usernamePattern = "^@?(\\w){1,15}$";
+    private Pattern rWord = Pattern.compile(wordPattern);
+    private Pattern rUsername = Pattern.compile(usernamePattern);
+
+    public Test_k(TrainingResult trainingResult, int k, boolean optimize) {
+        this.optimize = optimize;
         this.trainingResult = trainingResult;
         this.k = k;
     }
@@ -69,15 +78,15 @@ public class Test_k {
                 piMap = new HashMap<Integer, List<Pi_k>>();
                 yMax = new String[sqn.size()];
                 //Calculate forward viterbi proabilities for each word in a sentence
-                for (int i = 0; i < sqn.size() + 2; i++) {
+                for (int i = 0; i < sqn.size()+2; i++) {
                     //calculates top k probabilites of label for each word
                     computePi(i, sqn, false);
                 }
 
                 //Terminating Viterbi by setting nth label = k-th probability label for STOP
-                List<Pi_k> prevPi = piMap.get(sqn.size() + 1);
-                Node topk = prevPi.get(0).nodeList.get(k - 1);
-                yMax[sqn.size() - 1] = topk.prevtag;
+                List<Pi_k> prevPi = piMap.get(sqn.size()+1);
+                Node topk = prevPi.get(0).nodeList.get(k-1);
+                yMax[sqn.size()-1] = topk.prevtag;
                 //Backward Viterbi to identify rest of the label until START
                 for (int n = sqn.size(); n > 1; n--) {
                     topk = getYmax(topk, n);
@@ -105,7 +114,7 @@ public class Test_k {
     private Node getYmax(Node node, int n) {
         List<Pi_k> prevPi = piMap.get(n);
         for (Pi_k pi : prevPi) {
-            if (pi.tag.equals(node.prevtag)) {
+            if (pi.tag.equals(node.prevtag)){
                 return pi.nodeList.get(node.previndex);
             }
         }
@@ -117,27 +126,35 @@ public class Test_k {
         List<Pi_k> piList = new ArrayList<Pi_k>();
         List<Node> nodeList = new ArrayList<Node>();
 
-        if (index == 0) {
-            nodeList.add(new Node(null, -1, 1.0));
+        if (index==0){
+            nodeList.add(new Node(null,-1,1.0));
             piList.add(new Pi_k("START", nodeList));
-            piMap.put(0, piList);
-        } else if (index == sqn.size() + 1) {
+            piMap.put(0,piList);
+        }
+        else if (index == sqn.size() + 1) {
             List<Pi_k> prevPi = piMap.get(index - 1);
             String y = "STOP";
-            for (Pi_k prev : prevPi) {
+            for (Pi_k prev: prevPi){
                 double tProbability = getTransmissionProbability(prev.tag, y);
-                for (int i = 0; i < prev.nodeList.size(); i++) {
+                for(int i=0;i<prev.nodeList.size();i++){
                     Node node = prev.nodeList.get(i);
-                    nodeList.add(new Node(prev.tag, i, tProbability * node.probability));
+                    nodeList.add(new Node(prev.tag, i,  tProbability * node.probability));
                 }
             }
             Collections.sort(nodeList);
-            piList.add(new Pi_k(y, nodeList.subList(0, k)));
+            piList.add(new Pi_k(y,nodeList.subList(0,k)));
             piMap.put(index, piList);
-        } else {
+        }
+        else {
             String word = sqn.get(index - 1);
             List<Pi_k> prevPi = piMap.get(index - 1);
             allZeros = true;
+
+            if (optimize) {
+                word = word.toLowerCase().replace("'", "").replace("#", "").replace(".", "").replace("@", "").replace(" ", "");
+            }
+
+
             //For each label, compute k probabilities
             for (String y : trainingResult.labelSorted) {
                 if (y.equals("STOP") || y.equals("START")) {
@@ -157,29 +174,33 @@ public class Test_k {
     //Computes k best proabilites from previous level probabilites.
     private Pi_k computePiHelper(List<Pi_k> prevPi, String word, String y, boolean emissionDefault) {
         List<Node> nodeList = new ArrayList<Node>();
-        for (Pi_k prev : prevPi) {
+        for (Pi_k prev: prevPi){
             double eProbability = 0;
             double tProbability = getTransmissionProbability(prev.tag, y);
             EmissionNode e = new EmissionNode(word, y);
-            if (emissionDefault) {
+            if (y.equals("O") && optimize && ignore(word)) {
+                eProbability = 1.0;
+            }
+            else if (emissionDefault) {
                 eProbability = getEmissionProbabilityDefault(word, y);
             } else {
                 eProbability = getEmissionProbability(word, y);
             }
-            for (int i = 0; i < prev.nodeList.size(); i++) {
+            for(int i=0;i<prev.nodeList.size();i++){
                 Node node = prev.nodeList.get(i);
                 nodeList.add(new Node(prev.tag, i, eProbability * tProbability * node.probability));
             }
         }
 
         Collections.sort(nodeList);
-        if (nodeList.get(0).probability != 0.0)
+        if (nodeList.get(0).probability!=0.0)
             allZeros = false;
-        if (k > nodeList.size())
-            return new Pi_k(y, nodeList);
-        return new Pi_k(y, nodeList.subList(0, k));
+        if (k>nodeList.size())
+            return new Pi_k(y,nodeList);
+        return new Pi_k(y,nodeList.subList(0,k));
 
     }
+
 
 
     private double getEmissionProbability(String x, String y) {
@@ -187,9 +208,10 @@ public class Test_k {
         double probability = 0;
         if (trainingResult.emissionProbability.containsKey(test)) {
             probability = trainingResult.emissionProbability.get(test);
-        } else if (!trainingResult.trainedWords.contains(x)) {
+        } else if (!trainingResult.trainedWords.containsKey(x)) {
             probability = getEmissionProbabilityDefault(x, y);
         }
+//        System.out.println(y + "->" + x + " : " + probability);
         return probability;
     }
 
@@ -200,6 +222,10 @@ public class Test_k {
             probability = trainingResult.emissionProbability.get(test);
         } else {
             double totalY = trainingResult.label.get(y) + 1;
+            if (optimize) {
+                totalY -= trainingResult.ignored.get(y);
+            }
+
             probability = 1 / totalY;
         }
         return probability;
@@ -223,5 +249,32 @@ public class Test_k {
             result = result + yMax[i] + " ";
         }
         return result;
+    }
+    private boolean ignore(String word) {
+        if (trainingResult.stopwords.contains(word)) {
+            return true;
+        } else if (!isWord(word)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isWord(String word) {
+        if (word.equals("")) {
+            return false;
+        }
+        Matcher m = rWord.matcher(word);
+        if (m.matches()) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isUsername(String word) {
+        Matcher m = rUsername.matcher(word);
+        if (m.matches()) {
+            return true;
+        }
+        return false;
     }
 }

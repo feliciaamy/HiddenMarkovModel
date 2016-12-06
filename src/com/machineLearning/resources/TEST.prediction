@@ -3,15 +3,15 @@
 @Rajarath I-negative
 @RajanLeaks I-negative
 any O
-recommendation B-positive
-for I-positive
-Andriod I-positive
+recommendation O
+for O
+Andriod O
 application O
 ? O
-suggestion B-positive
-for I-positive
-tamil I-positive
-twitter B-positive
-software I-positive
+suggestion O
+for O
+tamil O
+twitter B-neutral
+software I-neutral
 . O
 

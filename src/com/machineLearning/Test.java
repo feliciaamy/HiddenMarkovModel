@@ -220,7 +220,7 @@ public class Test {
         double probability = 0;
         if (trainingResult.emissionProbability.containsKey(test)) {
             probability = trainingResult.emissionProbability.get(test);
-        } else if (!trainingResult.trainedWords.contains(x)) {
+        } else if (!trainingResult.trainedWords.containsKey(x)) {
             probability = getEmissionProbabilityDefault(x, y);
         }
 //        System.out.println(y + "->" + x + " : " + probability);

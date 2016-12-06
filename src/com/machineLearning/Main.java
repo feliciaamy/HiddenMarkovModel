@@ -8,23 +8,29 @@ public class Main {
     private static TrainingResult trainingResult;
     public final static String LANGUAGE = "EN";
     private static boolean optimize = true;
+    private static PredictionAlgorithm algorithm = PredictionAlgorithm.VITERBIK;
     public static void main(String[] args) {
         File trainingFile = (new File(LANGUAGE + "/train.txt"));
 
-        Training trainingData = new Training(trainingFile, optimize);
+        Training trainingData = new Training(trainingFile, optimize, LANGUAGE);
         trainingResult = trainingData.getTrainingResult();
+
+        System.out.println(trainingResult.ignored);
+        System.out.println(trainingResult.trainedWords);
+        System.out.println(trainingResult.emissionProbability);
 
 //        printEmission(trainingResult.emission);
 //        printTransition(trainingResult.transition);
 //        printLabel(trainingResult.label);
 
-
-        File testFiles = new File(LANGUAGE + "/" + LANGUAGE+ ".in");
-        Test test = new Test(trainingResult, optimize);
-        test.writePrediction(testFiles, PredictionAlgorithm.VITERBI);
-
-//        Test_k test = new Test_k(trainingResult, 1);
-//        test.writePrediction(testFiles);
+//        File testFiles = new File(LANGUAGE + "/" + LANGUAGE+ ".in");
+//        if (algorithm == PredictionAlgorithm.VITERBIK){
+//            Test_k test = new Test_k(trainingResult, 1, optimize);
+//            test.writePrediction(testFiles);
+//        } else{
+//            Test test = new Test(trainingResult, optimize);
+//            test.writePrediction(testFiles, algorithm);
+//        }
     }
 
     public static void printEmission(Map<EmissionNode, Integer> map) {
