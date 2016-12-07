@@ -41,13 +41,13 @@ public class Test_k {
         this.k = k;
     }
 
-    public void writePrediction(File testFile) {
+    public void writePrediction(File testFile, String language) {
         try {
             String prediction;
             prediction = getPredictionViterbi(testFile);
 
             System.out.println("Writing prediction to file");
-            PrintWriter writer = new PrintWriter(Main.LANGUAGE + ".prediction", "UTF-8");
+            PrintWriter writer = new PrintWriter(language + "/" + language + "_VITERBIK.prediction", "UTF-8");
             writer.print(prediction);
             writer.close();
         } catch (IOException e) {

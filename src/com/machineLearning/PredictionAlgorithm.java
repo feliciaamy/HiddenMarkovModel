@@ -7,4 +7,5 @@ public enum PredictionAlgorithm {
     SIMPLE,
     VITERBI,
     VITERBIK,
+    OPTIMIZED
 }

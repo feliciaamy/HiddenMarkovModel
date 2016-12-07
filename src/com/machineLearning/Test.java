@@ -22,7 +22,7 @@ public class Test {
         this.trainingResult = trainingResult;
     }
 
-    public void writePrediction(File testFile, PredictionAlgorithm algo) {
+    public void writePrediction(File testFile, PredictionAlgorithm algo, String language) {
         try {
             String prediction;
             if (algo == PredictionAlgorithm.SIMPLE) {
@@ -31,7 +31,13 @@ public class Test {
                 prediction = getPredictionViterbi(testFile);
             }
             System.out.println("Writing prediction to file");
-            PrintWriter writer = new PrintWriter(Main.LANGUAGE + ".prediction", "UTF-8");
+            String filename;
+            if (optimize) {
+                filename = language + "/" + language + "_" + algo + "(OPTIMIZED)" + ".prediction";
+            } else {
+                filename = language + "/" + language + "_" + algo + ".prediction";
+            }
+            PrintWriter writer = new PrintWriter(filename, "UTF-8");
             writer.print(prediction);
             writer.close();
         } catch (IOException e) {
@@ -88,9 +94,9 @@ public class Test {
         Pi max = new Pi("", Double.MIN_VALUE);
         for (Pi pi : prevPi) {
             double newProb = pi.probability * getTransmissionProbability(pi.tag, finalNode);
-            System.out.println(n + " " + pi.tag + " " + newProb + " " + pi.probability + " " + getTransmissionProbability(pi.tag, finalNode));
+//            System.out.println(n + " " + pi.tag + " " + newProb + " " + pi.probability + " " + getTransmissionProbability(pi.tag, finalNode));
             if (newProb > max.probability) {
-                System.out.println(pi.tag);
+//                System.out.println(pi.tag);
                 max.probability = newProb;
                 max.tag = pi.tag;
             }
@@ -123,16 +129,13 @@ public class Test {
         } else {
             String word = sqn.get(index - 1);
             if (optimize) {
-                System.out.println(word);
-                word = word.toLowerCase().replace("'", "").replace("#", "").replace(".", "").replace("@", "").replace(" ", "");
-                System.out.println(word);
+                word = word.toLowerCase().replace("'", "").replace("#", "").replace(".", "").replace(" ", "").replace("@", "");
             }
             List<Pi> prevPi = piMap.get(index - 1);
             boolean allZeros = true;
 
             for (String y : trainingResult.labelSorted) {
                 if (y.equals("O") && optimize && ignore(word)) {
-                    System.out.println(word);
                     piList.add(new Pi(y, 1));
                     continue;
                 }
@@ -278,14 +281,6 @@ public class Test {
             return false;
         }
         Matcher m = rWord.matcher(word);
-        if (m.matches()) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isUsername(String word) {
-        Matcher m = rUsername.matcher(word);
         if (m.matches()) {
             return true;
         }

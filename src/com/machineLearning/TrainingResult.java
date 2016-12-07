@@ -31,6 +31,10 @@ public class TrainingResult {
         stopwordsMap = new HashMap<>();
         stopwordsMap.put("EN", stopwords_en);
         stopwordsMap.put("ES", stopwords_es);
-        stopwords = new ArrayList<String>(Arrays.asList(stopwordsMap.get(language)));
+        if (language.equals("EN") || language.equals("ES")) {
+            stopwords = new ArrayList<String>(Arrays.asList(stopwordsMap.get(language)));
+        } else {
+            stopwords = new ArrayList<String>();
+        }
     }
 }

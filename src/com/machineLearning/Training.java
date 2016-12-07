@@ -42,13 +42,13 @@ public class Training {
                     String word = temp[0];
                     if (optimize) {
                         word = temp[0].toLowerCase().replace("'", "").replace("#", "").replace(".", "");
+                        word = word.replace("@", "");
                     }
                     // LABEL
                     updateLabel(temp[1]);
-                    if (!optimize || ((isWord(word) || isUsername(word)) && !tr.stopwords.contains(word))) {
+                    if (!optimize || (isWord(word) && !tr.stopwords.contains(word))) {
                         isFeature = true;
                         if (optimize) {
-                            word = word.replace("@", "");
                             if (word.equals("")) {
                                 continue;
                             }
