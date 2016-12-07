@@ -8,7 +8,7 @@ public class Main {
     private static TrainingResult trainingResult;
     private final static String[] LANGUAGES = {"EN", "ES", "SG", "CN"};
     private static boolean optimize = false;
-    private static PredictionAlgorithm algorithm = PredictionAlgorithm.VITERBIK;
+    private static PredictionAlgorithm algorithm = PredictionAlgorithm.OPTIMIZED;
 
     public static void main(String[] args) {
         if (algorithm == PredictionAlgorithm.OPTIMIZED) {
